@@ -21,6 +21,7 @@ import (
 
 	"koryhub.dev/kory/internal/project"
 	"koryhub.dev/kory/internal/scan"
+	"koryhub.dev/kory/internal/secrets"
 )
 
 // MaxSize : taille maximale d'une archive compressée (F-REG-03).
@@ -30,6 +31,15 @@ const MaxSize = 10 * 1024 * 1024
 type Problem struct {
 	Code string // missing, symlink, not_regular, binary, svg, conflict, too_large, readme_missing, outside
 	Path string
+}
+
+// SecretsFound : secrets trouvés avant l'envoi ; la publication est bloquée, sans contournement (F-REG-07).
+type SecretsFound struct {
+	Findings []secrets.Finding
+}
+
+func (s *SecretsFound) Error() string {
+	return fmt.Sprintf("%d secret(s)", len(s.Findings))
 }
 
 func (p *Problem) Error() string {
@@ -86,6 +96,7 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 	var entries []Entry
 	var published []string
 	var warnings []scan.Finding
+	var found []secrets.Finding
 
 	for _, rel := range files {
 		if strings.HasPrefix(rel, "/") || strings.Contains(rel, ":") || containsDotDot(rel) {
@@ -116,6 +127,11 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 			return nil, &Problem{Code: "conflict", Path: rel}
 		}
 		warnings = append(warnings, scan.Lines(name, data)...)
+		fileSecrets, err := secrets.Scan(name, data)
+		if err != nil {
+			return nil, err
+		}
+		found = append(found, fileSecrets...)
 		items = append(items, item{name, data})
 		entries = append(entries, Entry{Path: name, Size: int64(len(data))})
 		published = append(published, name)
@@ -126,6 +142,14 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 		return nil, &Problem{Code: "readme_missing", Path: filepath.ToSlash(filepath.Base(k.ReadmePath))}
 	}
 	warnings = append(warnings, scan.Lines("README.md", readme)...)
+	readmeSecrets, err := secrets.Scan("README.md", readme)
+	if err != nil {
+		return nil, err
+	}
+	found = append(found, readmeSecrets...)
+	if len(found) > 0 {
+		return nil, &SecretsFound{Findings: found}
+	}
 
 	m := k.Manifest
 	tags := m.Tags

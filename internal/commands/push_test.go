@@ -193,3 +193,24 @@ func TestPushWarnsAboutInternalInformationLineByLine(t *testing.T) {
 		t.Errorf("sortie : %q", out)
 	}
 }
+
+func TestASecretBlocksPushAndDryRunWithoutSendingAnything(t *testing.T) {
+	registry := newFakeRegistry(t)
+	registry.termsAccepted = true
+	s := newSession(t, registry.server.URL)
+	root := projectWithKory(t)
+	token := "kory_" + strings.Repeat("A", 40) + "0123abcd"
+	os.WriteFile(filepath.Join(root, "src", "Payments", "ci.php"), []byte("<?php\n\n$t = '"+token+"';\n"), 0o644)
+	s.run("", "init", "paiement", "--add", "src/Payments")
+	s.run("kory_x", "login", "--with-token")
+
+	for _, args := range [][]string{{"push", "--dry-run"}, {"push", "--yes"}} {
+		code, out, errOut := s.run("", args...)
+		if code != ExitError || !strings.Contains(errOut, "Secret detected: ci.php line 3 (koryhub-cli-token)") || strings.Contains(out+errOut, token) {
+			t.Errorf("%v : code %d, %q, %q", args, code, out, errOut)
+		}
+	}
+	if len(registry.posts) != 0 {
+		t.Error("rien ne doit être envoyé")
+	}
+}

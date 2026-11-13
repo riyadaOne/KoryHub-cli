@@ -194,6 +194,7 @@ func printSummary(e *env, k *project.Kory, fullName string, module *api.Module, 
 	if len(k.Manifest.Architecture) == 0 {
 		e.ui.Warn(i18n.T("push.no_architecture"), "")
 	}
+	e.ui.Success(i18n.T("secrets.none"))
 
 	for _, w := range result.Warnings {
 		e.ui.Warn(fmt.Sprintf("%s:%d  %s", w.Path, w.Line, i18n.T("scan."+string(w.Kind))), "")
@@ -209,6 +210,16 @@ func kilobytes(n int64) string {
 }
 
 func reportArchiveProblem(e *env, err error) int {
+	var found *archive.SecretsFound
+	if errors.As(err, &found) {
+		for _, f := range found.Findings {
+			e.ui.Error(i18n.T("secrets.found", f.Path, f.Line, f.Rule), "")
+		}
+		e.ui.Println("  " + i18n.T("secrets.action"))
+
+		return ExitError
+	}
+
 	var problem *archive.Problem
 	if !errors.As(err, &problem) {
 		e.ui.Error(err.Error(), "")
