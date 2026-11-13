@@ -1,0 +1,10 @@
+# Exécutables construits
+/dist/
+*.exe
+*.test
+
+# Fichiers d'éditeur et du système
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
