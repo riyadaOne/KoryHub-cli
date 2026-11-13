@@ -179,3 +179,17 @@ func TestPushWithoutLoginOrKoryIsExplained(t *testing.T) {
 		t.Errorf("sans connexion : code %d, %q", code, errOut)
 	}
 }
+
+func TestPushWarnsAboutInternalInformationLineByLine(t *testing.T) {
+	registry := newFakeRegistry(t)
+	s := newSession(t, registry.server.URL)
+	root := projectWithKory(t)
+	os.WriteFile(filepath.Join(root, "src", "Payments", "Gateway.php"), []byte("<?php\n$cb = 'https://api-prod.client.td/callback';\n"), 0o644)
+	s.run("", "init", "paiement", "--add", "src/Payments")
+
+	_, out, _ := s.run("", "push", "--dry-run")
+
+	if !strings.Contains(out, "Gateway.php:2") || !strings.Contains(out, "internal web address") || !strings.Contains(out, "https://api-prod.client.td/callback") {
+		t.Errorf("sortie : %q", out)
+	}
+}

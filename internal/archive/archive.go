@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"koryhub.dev/kory/internal/project"
+	"koryhub.dev/kory/internal/scan"
 )
 
 // MaxSize : taille maximale d'une archive compressée (F-REG-03).
@@ -46,6 +47,8 @@ type Result struct {
 	Data    []byte
 	SHA256  string
 	Entries []Entry // fichiers du kory, sans kory.json ni README.md
+	// Warnings : informations qui ressemblent à de la production (F-REG-31), chemins publiés.
+	Warnings []scan.Finding
 }
 
 var images = map[string][]byte{
@@ -82,6 +85,7 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 	var items []item
 	var entries []Entry
 	var published []string
+	var warnings []scan.Finding
 
 	for _, rel := range files {
 		if strings.HasPrefix(rel, "/") || strings.Contains(rel, ":") || containsDotDot(rel) {
@@ -111,6 +115,7 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 		if name == "kory.json" || name == "README.md" {
 			return nil, &Problem{Code: "conflict", Path: rel}
 		}
+		warnings = append(warnings, scan.Lines(name, data)...)
 		items = append(items, item{name, data})
 		entries = append(entries, Entry{Path: name, Size: int64(len(data))})
 		published = append(published, name)
@@ -120,6 +125,7 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 	if err != nil {
 		return nil, &Problem{Code: "readme_missing", Path: filepath.ToSlash(filepath.Base(k.ReadmePath))}
 	}
+	warnings = append(warnings, scan.Lines("README.md", readme)...)
 
 	m := k.Manifest
 	tags := m.Tags
@@ -160,7 +166,7 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 
 	sum := sha256.Sum256(buf.Bytes())
 
-	return &Result{Data: buf.Bytes(), SHA256: hex.EncodeToString(sum[:]), Entries: entries}, nil
+	return &Result{Data: buf.Bytes(), SHA256: hex.EncodeToString(sum[:]), Entries: entries, Warnings: warnings}, nil
 }
 
 // contentProblem : binaire (hors images de la documentation) ou SVG (piège 21).

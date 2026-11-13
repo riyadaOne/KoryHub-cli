@@ -194,6 +194,14 @@ func printSummary(e *env, k *project.Kory, fullName string, module *api.Module, 
 	if len(k.Manifest.Architecture) == 0 {
 		e.ui.Warn(i18n.T("push.no_architecture"), "")
 	}
+
+	for _, w := range result.Warnings {
+		e.ui.Warn(fmt.Sprintf("%s:%d  %s", w.Path, w.Line, i18n.T("scan."+string(w.Kind))), "")
+		e.ui.Println("      " + w.Value)
+	}
+	if len(result.Warnings) > 0 {
+		e.ui.Println("  " + i18n.T("push.internal_action"))
+	}
 }
 
 func kilobytes(n int64) string {
