@@ -42,6 +42,7 @@ func commandList() []command {
 		{"list", "help.cmd.list", runList},
 		{"push", "help.cmd.push", runPush},
 		{"graph", "help.cmd.graph", runGraph},
+		{"pull", "help.cmd.pull", runPull},
 		{"login", "help.cmd.login", runLogin},
 		{"logout", "help.cmd.logout", runLogout},
 		{"whoami", "help.cmd.whoami", runWhoami},

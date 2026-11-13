@@ -151,3 +151,34 @@ func isTerminal(stream any) bool {
 
 	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
+
+// Prompt pose une question ouverte et renvoie la réponse sans espaces autour ; faux sans terminal
+// ou si l'entrée est fermée : l'appelant garde alors sa valeur par défaut.
+func (u *UI) Prompt(question string) (string, bool) {
+	if !u.interactive {
+		return "", false
+	}
+
+	fmt.Fprintf(u.out, "  %s ", question)
+	answer, err := u.in.ReadString('\n')
+	if err != nil && answer == "" {
+		return "", false
+	}
+
+	return strings.TrimSpace(answer), true
+}
+
+// DiffLine écrit une ligne de différence : « - » en rouge, « + » en vert, contexte normal,
+// « @@ » et en-têtes en gris.
+func (u *UI) DiffLine(prefix, text string) {
+	switch prefix {
+	case "-":
+		fmt.Fprintln(u.out, u.paint(red, "-"+text))
+	case "+":
+		fmt.Fprintln(u.out, u.paint(green, "+"+text))
+	case "@":
+		fmt.Fprintln(u.out, u.paint(dim, text))
+	default:
+		fmt.Fprintln(u.out, " "+text)
+	}
+}

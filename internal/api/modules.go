@@ -15,14 +15,6 @@ import (
 	"koryhub.dev/kory/internal/version"
 )
 
-// Module : module vu par le CLI (GET /v1/modules/{auteur}/{nom}).
-type Module struct {
-	Name          string  `json:"name"`
-	Visibility    string  `json:"visibility"`
-	Status        string  `json:"status"`
-	LatestVersion *string `json:"latest_version"`
-}
-
 // PublishedVersion : rapport de publication (POST /v1/modules/{auteur}/{nom}/versions).
 type PublishedVersion struct {
 	Name       string `json:"name"`

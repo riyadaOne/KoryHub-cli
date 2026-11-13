@@ -22,6 +22,8 @@ type Error struct {
 	Code    string              `json:"code"`
 	Message string              `json:"message"`
 	Errors  map[string][]string `json:"errors,omitempty"`
+	// RetryAt : heure de reprise en UTC (ISO 8601) après une limite de téléchargement (429).
+	RetryAt string `json:"retry_at,omitempty"`
 }
 
 func (e *Error) Error() string {

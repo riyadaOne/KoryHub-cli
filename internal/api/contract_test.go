@@ -96,6 +96,7 @@ func TestAuthTypesMatchTheContract(t *testing.T) {
 		{"User", "/user", "get", User{}, "200"},
 		{"Module", "/modules/{author}/{module}", "get", Module{}, "200"},
 		{"PublishedVersion", "/modules/{author}/{module}/versions", "post", PublishedVersion{}, "201"},
+		{"VersionDetail", "/modules/{author}/{module}/versions/{version}", "get", VersionDetail{}, "200"},
 	}
 
 	for _, tc := range cases {
