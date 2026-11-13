@@ -160,7 +160,7 @@ func TestPullInstallsInKoryFolderAndWritesTheLockLast(t *testing.T) {
 	if code != ExitOK {
 		t.Fatalf("code %d, %q, %q", code, out, errOut)
 	}
-	for _, want := range []string{"@moussa/paiement 1.2.0 · MIT · php · 1 files", "Kory not certified", "composer · php >=8.3", "Checksum verified", "2 files written in kory", "kory.lock updated"} {
+	for _, want := range []string{"@moussa/paiement 1.2.0 · MIT · php · files: 1", "Kory not certified", "composer · php >=8.3", "Checksum verified", "Files written in kory", "kory.lock updated"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("sortie sans %q : %q", want, out)
 		}
@@ -195,7 +195,7 @@ func TestPullWithYesNeverOverwritesAnExistingFile(t *testing.T) {
 	os.WriteFile(filepath.Join(root, "lib", "src", "PaymentService.php"), []byte("<?php // le mien\n"), 0o644)
 
 	code, out, errOut := s.run("", "pull", "@moussa/paiement", "--dir", "lib", "--yes")
-	if code != ExitOK || !strings.Contains(out, "1 existing files kept") {
+	if code != ExitOK || !strings.Contains(out, "Existing files kept: 1") {
 		t.Fatalf("code %d, %q, %q", code, out, errOut)
 	}
 	if readFile(t, root, "lib/src/PaymentService.php") != "<?php // le mien\n" {
