@@ -52,7 +52,7 @@ func runPush(e *env, args []string) int {
 	}
 	k, ok := project.Find(koryList, name)
 	if !ok {
-		return reportMissingKory(e, koryList, name)
+		return reportMissingKory(e, koryList, name, "push.choose_action")
 	}
 
 	// Compte relié : nécessaire pour publier ; pour --dry-run, seulement pour afficher le nom complet.
@@ -232,7 +232,7 @@ func reportArchiveProblem(e *env, err error) int {
 	return ExitError
 }
 
-func reportMissingKory(e *env, koryList []project.Kory, name string) int {
+func reportMissingKory(e *env, koryList []project.Kory, name, actionKey string) int {
 	if len(koryList) == 0 {
 		e.ui.Error(i18n.T("push.no_kory"), i18n.T("push.no_kory_action"))
 
@@ -244,9 +244,9 @@ func reportMissingKory(e *env, koryList []project.Kory, name string) int {
 		names = append(names, k.Manifest.Name)
 	}
 	if name == "" {
-		e.ui.Error(i18n.T("push.choose"), i18n.T("push.choose_action", strings.Join(names, ", ")))
+		e.ui.Error(i18n.T("push.choose"), i18n.T(actionKey, strings.Join(names, ", ")))
 	} else {
-		e.ui.Error(i18n.T("push.unknown_kory", name), i18n.T("push.choose_action", strings.Join(names, ", ")))
+		e.ui.Error(i18n.T("push.unknown_kory", name), i18n.T(actionKey, strings.Join(names, ", ")))
 	}
 
 	return ExitUsage

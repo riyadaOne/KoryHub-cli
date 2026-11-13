@@ -1,7 +1,9 @@
 package project
 
 import (
+	"os"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -60,5 +62,16 @@ func TestRequirementsComeFromTheProjectManifests(t *testing.T) {
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("prérequis :\n%v\nattendu :\n%v", got, want)
+	}
+}
+
+func TestManifestKeepsVersionConstraintsReadable(t *testing.T) {
+	k := &Kory{ManifestPath: t.TempDir() + "/kory.json", Manifest: Manifest{Name: "a", Requires: []Requirement{{Ecosystem: "composer", Name: "php", Version: ">=8.3"}}}}
+	if err := k.Save(); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(k.ManifestPath)
+	if !strings.Contains(string(data), `"version": ">=8.3"`) {
+		t.Errorf("kory.json : %s", data)
 	}
 }

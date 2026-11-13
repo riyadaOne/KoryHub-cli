@@ -4,6 +4,7 @@
 package project
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -122,7 +123,7 @@ func (k *Kory) Save() error {
 	if err := os.MkdirAll(filepath.Dir(k.ManifestPath), 0o755); err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(k.Manifest, "", "  ")
+	data, err := IndentJSON(k.Manifest)
 	if err != nil {
 		return err
 	}
@@ -272,4 +273,17 @@ func SanitizeName(s string) string {
 	}
 
 	return s
+}
+
+// IndentJSON : JSON indenté de deux espaces, sans échapper < > & (« >=8.3 » reste lisible).
+func IndentJSON(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+
+	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }

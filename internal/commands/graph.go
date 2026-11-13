@@ -43,7 +43,7 @@ func runGraph(e *env, args []string) int {
 	}
 	k, ok := project.Find(koryList, name)
 	if !ok {
-		return reportMissingKory(e, koryList, name)
+		return reportMissingKory(e, koryList, name, "graph.choose_action")
 	}
 
 	result := graph.Analyze(project.ReadFiles(root, k.Manifest.Files))

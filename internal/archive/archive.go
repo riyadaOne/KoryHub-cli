@@ -171,10 +171,10 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 		}
 	}
 
-	manifest, err := json.MarshalIndent(normalized{
+	manifest, err := project.IndentJSON(normalized{
 		Name: fullName, Version: m.Version, Description: m.Description, License: m.License, Language: m.Language,
 		Tags: tags, Files: published, Requires: m.Requires, Architecture: architecture,
-	}, "", "  ")
+	})
 	if err != nil {
 		return nil, err
 	}
