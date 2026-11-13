@@ -89,14 +89,17 @@ func TestAuthTypesMatchTheContract(t *testing.T) {
 	cases := []struct {
 		name, path, method string
 		value              any
+		status             string
 	}{
-		{"DeviceCode", "/auth/device", "post", DeviceCode{}},
-		{"IssuedToken", "/auth/device/token", "post", IssuedToken{}},
-		{"User", "/user", "get", User{}},
+		{"DeviceCode", "/auth/device", "post", DeviceCode{}, "200"},
+		{"IssuedToken", "/auth/device/token", "post", IssuedToken{}, "200"},
+		{"User", "/user", "get", User{}, "200"},
+		{"Module", "/modules/{author}/{module}", "get", Module{}, "200"},
+		{"PublishedVersion", "/modules/{author}/{module}/versions", "post", PublishedVersion{}, "201"},
 	}
 
 	for _, tc := range cases {
-		want := responseFields(t, c, tc.path, tc.method, "200")
+		want := responseFields(t, c, tc.path, tc.method, tc.status)
 		if got := jsonFields(tc.value); !slices.Equal(got, want) {
 			t.Errorf("%s : champs %v ; contrat %v", tc.name, got, want)
 		}
