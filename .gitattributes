@@ -1,0 +1,7 @@
+# Fins de ligne LF dans le dépôt et sur le poste, quel que soit le réglage core.autocrlf :
+# gofmt attend des LF, et les empreintes des fichiers portent sur les octets exacts (TRD §13, piège 19).
+* text=auto eol=lf
+
+# Fichiers binaires : jamais convertis.
+*.exe binary
+*.png binary
