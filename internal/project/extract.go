@@ -115,3 +115,39 @@ func ReadFiles(root string, files []string) map[string]string {
 
 	return out
 }
+
+// Shared : fichier de la liste déjà publié par un autre kory du projet (K02.9 : avertissement).
+type Shared struct {
+	Path string
+	Kory string
+}
+
+// SharedFiles renvoie les fichiers de la liste qui figurent déjà dans un autre kory du projet
+// que celui nommé (le kory en cours de création).
+func SharedFiles(root string, files []string, except string) []Shared {
+	others, err := Discover(root)
+	if err != nil {
+		return nil
+	}
+
+	owner := map[string]string{}
+	for _, k := range others {
+		if k.Manifest.Name == except {
+			continue
+		}
+		for _, f := range k.Manifest.Files {
+			if _, exists := owner[f]; !exists {
+				owner[f] = k.Manifest.Name
+			}
+		}
+	}
+
+	var shared []Shared
+	for _, f := range files {
+		if name, ok := owner[f]; ok {
+			shared = append(shared, Shared{Path: f, Kory: name})
+		}
+	}
+
+	return shared
+}

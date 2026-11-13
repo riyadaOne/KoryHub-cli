@@ -55,6 +55,12 @@ func runInit(e *env, args []string) int {
 
 	opts.Readme = i18n.T("init.readme_template", displayName(opts.Name))
 	k, err := project.Init(root, opts)
+	if err == nil {
+		// Fichier déjà dans un autre kory du projet : permis, signalé (K02.9).
+		for _, s := range project.SharedFiles(root, k.Manifest.Files, k.Manifest.Name) {
+			e.ui.Warn(i18n.T("init.shared", s.Path, s.Kory), "")
+		}
+	}
 	switch {
 	case errors.Is(err, project.ErrExists):
 		e.ui.Error(i18n.T("init.exists"), i18n.T("init.exists_action"))

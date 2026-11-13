@@ -75,3 +75,16 @@ func TestManifestKeepsVersionConstraintsReadable(t *testing.T) {
 		t.Errorf("kory.json : %s", data)
 	}
 }
+
+func TestSharedFilesNameTheKoryThatAlreadyHasThem(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, "src/Money.php", "<?php\nfinal class Money {}\n")
+	write(t, root, ".kory/caisse/kory.json", `{"name":"caisse","version":"1.0.0","files":["src/Money.php"]}`)
+
+	write(t, root, ".kory/aa-nouveau/kory.json", `{"name":"aa-nouveau","version":"1.0.0","files":["src/Money.php"]}`)
+
+	got := SharedFiles(root, []string{"src/Money.php", "src/Other.php"}, "aa-nouveau")
+	if !slices.Equal(got, []Shared{{Path: "src/Money.php", Kory: "caisse"}}) {
+		t.Errorf("partagés : %v", got)
+	}
+}
