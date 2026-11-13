@@ -82,3 +82,23 @@ func TestMetaMatchesTheContract(t *testing.T) {
 		t.Errorf("Meta : champs %v ; contrat %v", got, want)
 	}
 }
+
+func TestAuthTypesMatchTheContract(t *testing.T) {
+	c := loadContract(t)
+
+	cases := []struct {
+		name, path, method string
+		value              any
+	}{
+		{"DeviceCode", "/auth/device", "post", DeviceCode{}},
+		{"IssuedToken", "/auth/device/token", "post", IssuedToken{}},
+		{"User", "/user", "get", User{}},
+	}
+
+	for _, tc := range cases {
+		want := responseFields(t, c, tc.path, tc.method, "200")
+		if got := jsonFields(tc.value); !slices.Equal(got, want) {
+			t.Errorf("%s : champs %v ; contrat %v", tc.name, got, want)
+		}
+	}
+}
