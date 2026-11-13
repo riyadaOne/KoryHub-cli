@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -212,5 +215,57 @@ func TestASecretBlocksPushAndDryRunWithoutSendingAnything(t *testing.T) {
 	}
 	if len(registry.posts) != 0 {
 		t.Error("rien ne doit être envoyé")
+	}
+}
+
+func TestGraphWritesTheArchitectureAndPushPublishesItRelativeToTheKory(t *testing.T) {
+	registry := newFakeRegistry(t)
+	s := newSession(t, registry.server.URL)
+	root := projectWithKory(t)
+	os.WriteFile(filepath.Join(root, "src", "Payments", "PaymentService.php"), []byte("<?php\nfinal class PaymentService\n{\n    public function __construct(private PaymentGateway $g) {}\n}\n"), 0o644)
+	os.WriteFile(filepath.Join(root, "src", "Payments", "PaymentGateway.php"), []byte("<?php\ninterface PaymentGateway\n{\n}\n"), 0o644)
+	s.run("", "init", "paiement", "--add", "src/Payments")
+
+	code, _, errOut := s.run("", "graph", "paiement")
+	if code != ExitUsage || !strings.Contains(errOut, "--yes") {
+		t.Fatalf("sans terminal ni --yes : code %d, %q", code, errOut)
+	}
+
+	code, out, _ := s.run("", "graph", "paiement", "--yes")
+	if code != ExitOK || !strings.Contains(out, "2 components, 1 links") || !strings.Contains(out, "PaymentService → PaymentGateway  (uses)") {
+		t.Fatalf("graph : code %d, %q", code, out)
+	}
+
+	manifest, _ := os.ReadFile(filepath.Join(root, ".kory", "paiement", "kory.json"))
+	if !strings.Contains(string(manifest), `"file": "src/Payments/PaymentService.php"`) {
+		t.Errorf("manifeste local : %s", manifest)
+	}
+
+	registry.termsAccepted = true
+	s.run("kory_x", "login", "--with-token")
+	s.run("", "push", "--yes")
+	published := koryJSON(t, registry.archives[0])
+	if !strings.Contains(published, `"file": "PaymentService.php"`) || strings.Contains(published, "src/Payments") {
+		t.Errorf("kory.json publié : %s", published)
+	}
+}
+
+// koryJSON lit kory.json dans une archive .tar.gz envoyée.
+func koryJSON(t *testing.T, data []byte) string {
+	t.Helper()
+	gz, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tr := tar.NewReader(gz)
+	for {
+		h, err := tr.Next()
+		if err != nil {
+			t.Fatal("kory.json absent")
+		}
+		if h.Name == "kory.json" {
+			b, _ := io.ReadAll(tr)
+			return string(b)
+		}
 	}
 }

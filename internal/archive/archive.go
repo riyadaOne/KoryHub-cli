@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"koryhub.dev/kory/internal/graph"
 	"koryhub.dev/kory/internal/project"
 	"koryhub.dev/kory/internal/scan"
 	"koryhub.dev/kory/internal/secrets"
@@ -156,9 +157,23 @@ func Build(root string, k *project.Kory, fullName string) (*Result, error) {
 	if tags == nil {
 		tags = []string{}
 	}
+	// Architecture : chemins des composants relatifs au dossier commun, comme les fichiers (T-44).
+	architecture := m.Architecture
+	if len(architecture) > 0 {
+		var a graph.Architecture
+		if err := json.Unmarshal(architecture, &a); err == nil {
+			for i := range a.Components {
+				a.Components[i].File = strings.TrimPrefix(a.Components[i].File, common)
+			}
+			if architecture, err = json.Marshal(a); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	manifest, err := json.MarshalIndent(normalized{
 		Name: fullName, Version: m.Version, Description: m.Description, License: m.License, Language: m.Language,
-		Tags: tags, Files: published, Requires: m.Requires, Architecture: m.Architecture,
+		Tags: tags, Files: published, Requires: m.Requires, Architecture: architecture,
 	}, "", "  ")
 	if err != nil {
 		return nil, err

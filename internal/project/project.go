@@ -136,6 +136,10 @@ type InitOptions struct {
 	Add     []string // fichiers ou dossiers, relatifs à la racine
 	License string
 	Readme  string // contenu du README de départ
+	// Files : liste déjà établie (kory init --from) ; sinon les fichiers de Add.
+	Files []string
+	// Requires : prérequis détectés (kory init --from).
+	Requires []Requirement
 }
 
 // Init crée un kory : manifeste, README de départ et .koryignore par défaut s'il manque.
@@ -164,10 +168,13 @@ func Init(root string, opts InitOptions) (*Kory, error) {
 		return nil, err
 	}
 
-	files, err := Collect(root, opts.Add, ignore)
-	if err != nil {
-		return nil, err
+	files := opts.Files
+	if files == nil {
+		if files, err = Collect(root, opts.Add, ignore); err != nil {
+			return nil, err
+		}
 	}
+	sort.Strings(files)
 
 	k := &Kory{
 		Manifest: Manifest{
@@ -177,6 +184,7 @@ func Init(root string, opts InitOptions) (*Kory, error) {
 			Language: DetectLanguage(files),
 			Tags:     []string{},
 			Files:    files,
+			Requires: opts.Requires,
 		},
 		ManifestPath: manifestPath,
 		ReadmePath:   readmePath,
