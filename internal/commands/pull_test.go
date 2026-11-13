@@ -160,7 +160,7 @@ func TestPullInstallsInKoryFolderAndWritesTheLockLast(t *testing.T) {
 	if code != ExitOK {
 		t.Fatalf("code %d, %q, %q", code, out, errOut)
 	}
-	for _, want := range []string{"@moussa/paiement 1.2.0 · MIT · php · 2 files", "Kory not certified", "composer · php >=8.3", "Checksum verified", "2 files written in kory", "kory.lock updated"} {
+	for _, want := range []string{"@moussa/paiement 1.2.0 · MIT · php · 1 files", "Kory not certified", "composer · php >=8.3", "Checksum verified", "2 files written in kory", "kory.lock updated"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("sortie sans %q : %q", want, out)
 		}

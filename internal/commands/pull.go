@@ -164,7 +164,14 @@ func printHeader(e *env, module *api.Module, detail *api.VersionDetail) {
 	if detail.Language != nil && *detail.Language != "" {
 		parts = append(parts, *detail.Language)
 	}
-	parts = append(parts, i18n.T("pull.files_count", len(detail.Files)))
+	// Même compte que la fiche du site : sans kory.json ni README.md.
+	count := 0
+	for _, f := range detail.Files {
+		if f.Path != "kory.json" && f.Path != "README.md" {
+			count++
+		}
+	}
+	parts = append(parts, i18n.T("pull.files_count", count))
 	e.ui.Println(fmt.Sprintf("  %s %s", module.Name, strings.Join(parts, " · ")))
 	if module.Description != nil && *module.Description != "" {
 		e.ui.Println("  " + *module.Description)
