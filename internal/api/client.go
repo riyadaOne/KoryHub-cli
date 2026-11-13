@@ -3,6 +3,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -70,13 +71,34 @@ func (c *Client) Meta(ctx context.Context) (*Meta, error) {
 }
 
 func (c *Client) get(ctx context.Context, path string, target any) error {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+path, nil)
+	return c.do(ctx, http.MethodGet, path, "", nil, target)
+}
+
+// do envoie une requête à l'API ; token (facultatif) part dans l'en-tête Authorization,
+// body (facultatif) en JSON. Une réponse 204 ou un target nil ne lit pas de corps.
+func (c *Client) do(ctx context.Context, method, path, token string, body, target any) error {
+	var payload io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		payload = bytes.NewReader(data)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, method, c.BaseURL+path, payload)
 	if err != nil {
 		return err
 	}
 
 	request.Header.Set("User-Agent", version.UserAgent())
 	request.Header.Set("Accept", "application/json")
+	if body != nil {
+		request.Header.Set("Content-Type", "application/json")
+	}
+	if token != "" {
+		request.Header.Set("Authorization", "Bearer "+token)
+	}
 	if c.Lang != "" {
 		request.Header.Set("Accept-Language", c.Lang)
 	}
@@ -87,21 +109,25 @@ func (c *Client) get(ctx context.Context, path string, target any) error {
 	}
 	defer response.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
+	data, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrUnreachable, err)
 	}
 
 	if response.StatusCode >= 400 {
 		apiErr := &Error{Status: response.StatusCode}
-		if json.Unmarshal(body, apiErr) != nil || apiErr.Code == "" {
+		if json.Unmarshal(data, apiErr) != nil || apiErr.Code == "" {
 			return fmt.Errorf("%w: HTTP %d", ErrInvalidResponse, response.StatusCode)
 		}
 
 		return apiErr
 	}
 
-	if err := json.Unmarshal(body, target); err != nil {
+	if target == nil || response.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	if err := json.Unmarshal(data, target); err != nil {
 		return fmt.Errorf("%w: %v", ErrInvalidResponse, err)
 	}
 

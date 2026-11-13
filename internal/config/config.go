@@ -22,12 +22,13 @@ const DefaultAPIURL = "https://api.koryhub.dev"
 const EnvAPIURL = "KORY_API_URL"
 
 // Keys liste les réglages modifiables par kory config.
-var Keys = []string{"lang", "api-url"}
+var Keys = []string{"lang", "api-url", "credential-file"}
 
 // Config contient les réglages enregistrés.
 type Config struct {
-	Lang   string `json:"lang,omitempty"`
-	APIURL string `json:"api_url,omitempty"`
+	Lang           string `json:"lang,omitempty"`
+	APIURL         string `json:"api_url,omitempty"`
+	CredentialFile string `json:"credential_file,omitempty"`
 
 	path string
 }
@@ -102,6 +103,8 @@ func (c *Config) Get(key string) (string, bool) {
 		return c.Lang, true
 	case "api-url":
 		return c.APIURL, true
+	case "credential-file":
+		return c.CredentialFile, true
 	}
 
 	return "", false
@@ -112,6 +115,7 @@ var (
 	ErrUnknownKey  = errors.New("unknown setting")
 	ErrInvalidLang = errors.New("unsupported language")
 	ErrInvalidURL  = errors.New("invalid address")
+	ErrInvalidPath = errors.New("path must be absolute")
 )
 
 // Set change un réglage après l'avoir vérifié.
@@ -129,9 +133,24 @@ func (c *Config) Set(key, value string) error {
 			return ErrInvalidURL
 		}
 		c.APIURL = value
+	case "credential-file":
+		if !filepath.IsAbs(value) {
+			return ErrInvalidPath
+		}
+		c.CredentialFile = filepath.Clean(value)
 	default:
 		return ErrUnknownKey
 	}
 
 	return nil
+}
+
+// EffectiveCredentialFile renvoie le fichier du jeton (F-AUT-14) : le réglage
+// credential-file, sinon « credentials » dans le dossier de configuration.
+func (c *Config) EffectiveCredentialFile() string {
+	if c.CredentialFile != "" {
+		return c.CredentialFile
+	}
+
+	return filepath.Join(filepath.Dir(c.path), "credentials")
 }

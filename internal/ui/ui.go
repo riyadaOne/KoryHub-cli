@@ -31,6 +31,7 @@ type UI struct {
 	out, err    io.Writer
 	color       bool
 	interactive bool
+	piped       bool
 }
 
 // New prépare la sortie ; les couleurs et les questions dépendent du terminal.
@@ -46,6 +47,7 @@ func New(in io.Reader, out, errOut io.Writer) *UI {
 		err:         errOut,
 		color:       terminal && os.Getenv("NO_COLOR") == "",
 		interactive: terminal && isTerminal(in),
+		piped:       !isTerminal(in),
 	}
 }
 
@@ -67,6 +69,21 @@ func (u *UI) Warn(cause, action string) {
 // Error écrit « ✗ cause » et, si elle est donnée, la ligne d'action, sur la sortie d'erreur.
 func (u *UI) Error(cause, action string) {
 	u.twoLines(u.err, u.paint(red, "✗"), cause, action)
+}
+
+// ReadPiped lit l'entrée standard quand elle est redirigée (kory login --with-token) ;
+// faux si l'entrée est un terminal : rien n'est alors demandé à l'écran.
+func (u *UI) ReadPiped() (string, bool) {
+	if !u.piped {
+		return "", false
+	}
+
+	data, err := io.ReadAll(io.LimitReader(u.in, 4096))
+	if err != nil {
+		return "", false
+	}
+
+	return strings.TrimSpace(string(data)), true
 }
 
 // Confirm pose une question oui/non ; « Non » par défaut. Sans terminal, rien n'est

@@ -38,6 +38,9 @@ type command struct {
 
 func commandList() []command {
 	return []command{
+		{"login", "help.cmd.login", runLogin},
+		{"logout", "help.cmd.logout", runLogout},
+		{"whoami", "help.cmd.whoami", runWhoami},
 		{"version", "help.cmd.version", runVersion},
 		{"config", "help.cmd.config", runConfig},
 		{"help", "help.cmd.help", runHelp},
@@ -89,6 +92,8 @@ func reportAPIError(e *env, err error) int {
 	switch {
 	case errors.As(err, &apiErr) && apiErr.Code == api.CodeUpgradeRequired:
 		e.ui.Error(apiErr.Message, i18n.T("api.upgrade_action"))
+	case errors.As(err, &apiErr) && apiErr.Code == api.CodeTokenInvalid:
+		e.ui.Error(apiErr.Message, i18n.T("auth.login_action"))
 	case errors.As(err, &apiErr):
 		e.ui.Error(apiErr.Message, "")
 	case errors.Is(err, api.ErrUnreachable):
