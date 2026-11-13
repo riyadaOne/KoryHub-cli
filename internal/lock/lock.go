@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -106,4 +107,23 @@ func (l *Lock) Names() []string {
 // Now : horodatage UTC de kory.lock et du journal.
 func Now() string {
 	return time.Now().UTC().Format(time.RFC3339)
+}
+
+// LogFile : journal local des synchronisations du projet (F-INT-11), lignes horodatées en UTC.
+const LogFile = ".kory/sync.log"
+
+// Log ajoute une ligne au journal : « date action @auteur/module version dossier ». Une erreur
+// d'écriture du journal n'arrête jamais la commande.
+func Log(root, action, name, version, directory string) {
+	path := filepath.Join(root, filepath.FromSlash(LogFile))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	f.WriteString(strings.Join([]string{Now(), action, name, version, directory}, " ") + "\n")
 }

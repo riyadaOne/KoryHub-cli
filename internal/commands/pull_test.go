@@ -31,12 +31,15 @@ type fakeHub struct {
 	failCode  int
 	cuts      int // coupures réseau avant de réussir
 	downloads int
+	version   string // dernière version stable servie
+	audit     string // corps de la réponse de POST /v1/audit
+	audited   []string
 	server    *httptest.Server
 }
 
 func newFakeHub(t *testing.T, files map[string]string) *fakeHub {
 	t.Helper()
-	h := &fakeHub{files: files, status: "published"}
+	h := &fakeHub{files: files, status: "published", version: "1.2.0", audit: `{"results":[]}`}
 	previous := retryPause
 	retryPause = func(int) {}
 	t.Cleanup(func() { retryPause = previous })
@@ -47,18 +50,28 @@ func newFakeHub(t *testing.T, files map[string]string) *fakeHub {
 		h.build()
 		w.Header().Set("Content-Type", "application/json")
 
+		versionPath := "/v1/modules/moussa/paiement/versions/" + h.version
 		switch r.URL.Path {
+		case "/v1/audit":
+			var body struct {
+				Modules []struct{ Name, Version string } `json:"modules"`
+			}
+			json.NewDecoder(r.Body).Decode(&body)
+			for _, m := range body.Modules {
+				h.audited = append(h.audited, m.Name+"@"+m.Version)
+			}
+			w.Write([]byte(h.audit))
 		case "/v1/modules/moussa/paiement":
-			w.Write([]byte(`{"name":"@moussa/paiement","visibility":"public","status":"active","latest_version":"1.2.0","description":"Encaissement Mobile Money.","language":"php","certified":false,"download_count":3,"versions":[]}`))
-		case "/v1/modules/moussa/paiement/versions/1.2.0":
+			w.Write([]byte(`{"name":"@moussa/paiement","visibility":"public","status":"active","latest_version":"` + h.version + `","description":"Encaissement Mobile Money.","language":"php","certified":false,"download_count":3,"versions":[]}`))
+		case versionPath:
 			detail := map[string]any{
-				"name": "@moussa/paiement", "version": "1.2.0", "status": h.status, "prerelease": false, "license": "MIT",
+				"name": "@moussa/paiement", "version": h.version, "status": h.status, "prerelease": false, "license": "MIT",
 				"language": "php", "published_at": nil, "sha256": h.announced(), "size": len(h.archive), "deprecation_message": nil,
 				"requires": []map[string]any{{"ecosystem": "composer", "name": "php", "version": ">=8.3"}},
 				"files":    h.fileList(),
 			}
 			json.NewEncoder(w).Encode(detail)
-		case "/v1/modules/moussa/paiement/versions/1.2.0/download":
+		case versionPath + "/download":
 			h.downloads++
 			if h.failCode != 0 {
 				w.WriteHeader(h.failCode)
@@ -91,7 +104,7 @@ func (h *fakeHub) build() {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
-	all := map[string]string{"kory.json": `{"name":"@moussa/paiement","version":"1.2.0"}`}
+	all := map[string]string{"kory.json": `{"name":"@moussa/paiement","version":"` + h.version + `"}`}
 	for k, v := range h.files {
 		all[k] = v
 	}

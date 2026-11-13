@@ -248,7 +248,7 @@ func showDiff(e *env, root, dir string, item install.Item) {
 const maxDiffLines = 200
 
 // apply écrit les fichiers après l'arbitrage puis kory.lock, en dernier (T-26).
-func apply(e *env, root string, l *lock.Lock, name string, detail *api.VersionDetail, dir string, items []install.Item, replace map[string]bool) bool {
+func apply(e *env, root, action string, l *lock.Lock, name string, detail *api.VersionDetail, dir string, items []install.Item, replace map[string]bool) bool {
 	result, err := install.Write(root, dir, items, replace)
 	if err != nil {
 		e.ui.Error(i18n.T("pull.write_failed", err.Error()), "")
@@ -267,11 +267,12 @@ func apply(e *env, root string, l *lock.Lock, name string, detail *api.VersionDe
 		return false
 	}
 
-	e.ui.Success(i18n.T("pull.written", result.Written+result.Replaced+result.Identical, filepath.FromSlash(dir)))
-	if result.Replaced > 0 || result.Kept > 0 {
-		e.ui.Println("  " + i18n.T("pull.summary", result.Written, result.Replaced, result.Kept))
+	e.ui.Success(i18n.T("pull.written", result.Written+result.Replaced, filepath.FromSlash(dir)))
+	if result.Replaced > 0 || result.Kept > 0 || result.Identical > 0 {
+		e.ui.Println("  " + i18n.T("pull.summary", result.Written, result.Replaced, result.Kept, result.Identical))
 	}
 	e.ui.Success(i18n.T("pull.lock_updated"))
+	lock.Log(root, action, name, detail.Version, filepath.ToSlash(dir))
 
 	return true
 }

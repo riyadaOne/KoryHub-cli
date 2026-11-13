@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"koryhub.dev/kory/internal/i18n"
 )
@@ -22,13 +23,17 @@ const DefaultAPIURL = "https://api.koryhub.dev"
 const EnvAPIURL = "KORY_API_URL"
 
 // Keys liste les réglages modifiables par kory config.
-var Keys = []string{"lang", "api-url", "credential-file"}
+var Keys = []string{"lang", "api-url", "credential-file", "update-notify"}
+
+// UpdateNotifyLevels : niveau de notification des mises à jour dans le CLI (F-INT-07) ; all par défaut.
+var UpdateNotifyLevels = []string{"all", "deprecations", "none"}
 
 // Config contient les réglages enregistrés.
 type Config struct {
 	Lang           string `json:"lang,omitempty"`
 	APIURL         string `json:"api_url,omitempty"`
 	CredentialFile string `json:"credential_file,omitempty"`
+	UpdateNotify   string `json:"update_notify,omitempty"`
 
 	path string
 }
@@ -105,6 +110,8 @@ func (c *Config) Get(key string) (string, bool) {
 		return c.APIURL, true
 	case "credential-file":
 		return c.CredentialFile, true
+	case "update-notify":
+		return c.UpdateNotify, true
 	}
 
 	return "", false
@@ -112,10 +119,11 @@ func (c *Config) Get(key string) (string, bool) {
 
 // ErrUnknownKey, ErrInvalidLang et ErrInvalidURL décrivent un réglage refusé.
 var (
-	ErrUnknownKey  = errors.New("unknown setting")
-	ErrInvalidLang = errors.New("unsupported language")
-	ErrInvalidURL  = errors.New("invalid address")
-	ErrInvalidPath = errors.New("path must be absolute")
+	ErrUnknownKey   = errors.New("unknown setting")
+	ErrInvalidLang  = errors.New("unsupported language")
+	ErrInvalidURL   = errors.New("invalid address")
+	ErrInvalidPath  = errors.New("path must be absolute")
+	ErrInvalidLevel = errors.New("unknown notification level")
 )
 
 // Set change un réglage après l'avoir vérifié.
@@ -138,6 +146,11 @@ func (c *Config) Set(key, value string) error {
 			return ErrInvalidPath
 		}
 		c.CredentialFile = filepath.Clean(value)
+	case "update-notify":
+		if !slices.Contains(UpdateNotifyLevels, value) {
+			return ErrInvalidLevel
+		}
+		c.UpdateNotify = value
 	default:
 		return ErrUnknownKey
 	}
@@ -153,4 +166,13 @@ func (c *Config) EffectiveCredentialFile() string {
 	}
 
 	return filepath.Join(filepath.Dir(c.path), "credentials")
+}
+
+// EffectiveUpdateNotify : niveau réglé, sinon all.
+func (c *Config) EffectiveUpdateNotify() string {
+	if c.UpdateNotify == "" {
+		return "all"
+	}
+
+	return c.UpdateNotify
 }

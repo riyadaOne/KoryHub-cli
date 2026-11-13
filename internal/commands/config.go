@@ -59,6 +59,8 @@ func reportConfigError(e *env, err error, key, value string) {
 		e.ui.Error(i18n.T("config.invalid_lang", value), i18n.T("config.langs_hint"))
 	case errors.Is(err, config.ErrInvalidURL):
 		e.ui.Error(i18n.T("config.invalid_url", value), i18n.T("config.url_hint"))
+	case errors.Is(err, config.ErrInvalidLevel):
+		e.ui.Error(i18n.T("config.invalid_level", value), i18n.T("config.levels_hint"))
 	case errors.Is(err, config.ErrInvalidPath):
 		e.ui.Error(i18n.T("config.invalid_path", value), i18n.T("config.path_hint"))
 	default:

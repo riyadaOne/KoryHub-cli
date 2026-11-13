@@ -107,9 +107,10 @@ func runPull(e *env, args []string) int {
 	}
 	replace := arbitrate(e, root, dir, items)
 
-	if !apply(e, root, l, target.fullName(), detail, dir, items, replace) {
+	if !apply(e, root, "pull", l, target.fullName(), detail, dir, items, replace) {
 		return ExitError
 	}
+	notifyOtherUpdates(e, token, l, target.fullName())
 
 	return ExitOK
 }
