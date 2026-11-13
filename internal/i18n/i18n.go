@@ -4,6 +4,7 @@ package i18n
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -85,4 +86,15 @@ func Keys(lang Lang) []string {
 	}
 
 	return keys
+}
+
+// Decimal écrit un nombre à une décimale avec le séparateur de la langue (« 4,6 » en français,
+// en arabe et en portugais, « 4.6 » en anglais).
+func Decimal(value float64) string {
+	text := strconv.FormatFloat(value, 'f', 1, 64)
+	if Current() != English {
+		text = strings.Replace(text, ".", ",", 1)
+	}
+
+	return text
 }

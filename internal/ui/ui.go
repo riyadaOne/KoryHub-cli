@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"koryhub.dev/kory/internal/i18n"
@@ -181,4 +182,17 @@ func (u *UI) DiffLine(prefix, text string) {
 	default:
 		fmt.Fprintln(u.out, " "+text)
 	}
+}
+
+// Width : largeur utile du terminal (variable COLUMNS, sinon 100) ; 0 si la sortie est redirigée :
+// rien n'est alors tronqué.
+func (u *UI) Width() int {
+	if !u.terminal {
+		return 0
+	}
+	if n, err := strconv.Atoi(os.Getenv("COLUMNS")); err == nil && n >= 40 {
+		return n
+	}
+
+	return 100
 }

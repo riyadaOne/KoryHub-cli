@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"koryhub.dev/kory/internal/version"
@@ -23,6 +24,79 @@ type Module struct {
 	Certified     bool             `json:"certified"`
 	DownloadCount int64            `json:"download_count"`
 	Versions      []VersionSummary `json:"versions"`
+	Author        Author           `json:"author"`
+	Category      *string          `json:"category"`
+	RatingAvg     *float64         `json:"rating_avg"`
+	RatingCount   int              `json:"rating_count"`
+}
+
+// Author : auteur d'un module (nom @auteur, pays ISO s'il est renseigné).
+type Author struct {
+	Handle  string  `json:"handle"`
+	Country *string `json:"country"`
+}
+
+// Architecture : composants et liens déclarés d'une version (F-RCH-18).
+type Architecture struct {
+	Components []struct {
+		ID   string  `json:"id"`
+		Kind string  `json:"kind"`
+		File *string `json:"file"`
+	} `json:"components"`
+	Links []struct {
+		From string `json:"from"`
+		To   string `json:"to"`
+		Kind string `json:"kind"`
+	} `json:"links"`
+}
+
+// SearchResult : un kory trouvé (GET /v1/search).
+type SearchResult struct {
+	Name          string   `json:"name"`
+	Description   *string  `json:"description"`
+	Language      *string  `json:"language"`
+	Category      *string  `json:"category"`
+	LatestVersion *string  `json:"latest_version"`
+	Deprecated    bool     `json:"deprecated"`
+	Archived      bool     `json:"archived"`
+	Certified     bool     `json:"certified"`
+	RatingAvg     *float64 `json:"rating_avg"`
+	RatingCount   int      `json:"rating_count"`
+	DownloadCount int64    `json:"download_count"`
+}
+
+// SearchResponse : résultats et nombre total.
+type SearchResponse struct {
+	Total   int            `json:"total"`
+	Results []SearchResult `json:"results"`
+}
+
+// SearchQuery : mots et filtres de kory search.
+type SearchQuery struct {
+	Words, Category, Language string
+	Limit                     int
+}
+
+// Search cherche des kory (mêmes règles que la page de recherche du site).
+func (c *Client) Search(ctx context.Context, token string, q SearchQuery) (*SearchResponse, error) {
+	params := url.Values{}
+	params.Set("q", q.Words)
+	if q.Category != "" {
+		params.Set("category", q.Category)
+	}
+	if q.Language != "" {
+		params.Set("language", q.Language)
+	}
+	if q.Limit > 0 {
+		params.Set("limit", strconv.Itoa(q.Limit))
+	}
+
+	var response SearchResponse
+	if err := c.do(ctx, http.MethodGet, "/v1/search?"+params.Encode(), token, nil, &response); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
 }
 
 // VersionSummary : une version dans la liste d'un module (publiée, dépréciée ou retirée).
@@ -49,6 +123,7 @@ type VersionDetail struct {
 	Size               int64         `json:"size"`
 	DeprecationMessage *string       `json:"deprecation_message"`
 	Requires           []Requirement `json:"requires"`
+	Architecture       Architecture  `json:"architecture"`
 	Files              []VersionFile `json:"files"`
 }
 
