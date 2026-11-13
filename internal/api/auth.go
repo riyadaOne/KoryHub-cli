@@ -36,10 +36,11 @@ type IssuedToken struct {
 
 // User : compte relié au jeton (GET /v1/user).
 type User struct {
-	Handle         string  `json:"handle"`
-	Name           *string `json:"name"`
-	TokenName      string  `json:"token_name"`
-	TokenExpiresAt *string `json:"token_expires_at"`
+	Handle                   string  `json:"handle"`
+	Name                     *string `json:"name"`
+	TokenName                string  `json:"token_name"`
+	TokenExpiresAt           *string `json:"token_expires_at"`
+	PublicationTermsAccepted bool    `json:"publication_terms_accepted"`
 }
 
 // RequestDeviceCode demande un code à afficher dans le terminal.

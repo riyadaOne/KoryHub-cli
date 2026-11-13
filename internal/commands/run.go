@@ -38,6 +38,9 @@ type command struct {
 
 func commandList() []command {
 	return []command{
+		{"init", "help.cmd.init", runInit},
+		{"list", "help.cmd.list", runList},
+		{"push", "help.cmd.push", runPush},
 		{"login", "help.cmd.login", runLogin},
 		{"logout", "help.cmd.logout", runLogout},
 		{"whoami", "help.cmd.whoami", runWhoami},

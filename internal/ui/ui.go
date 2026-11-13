@@ -32,6 +32,7 @@ type UI struct {
 	color       bool
 	interactive bool
 	piped       bool
+	terminal    bool
 }
 
 // New prépare la sortie ; les couleurs et les questions dépendent du terminal.
@@ -48,6 +49,7 @@ func New(in io.Reader, out, errOut io.Writer) *UI {
 		color:       terminal && os.Getenv("NO_COLOR") == "",
 		interactive: terminal && isTerminal(in),
 		piped:       !isTerminal(in),
+		terminal:    terminal,
 	}
 }
 
@@ -84,6 +86,23 @@ func (u *UI) ReadPiped() (string, bool) {
 	}
 
 	return strings.TrimSpace(string(data)), true
+}
+
+// Progress affiche une barre d'avancement sur une seule ligne, seulement dans un terminal.
+func (u *UI) Progress(label string, done, total int64) {
+	if !u.terminal || total <= 0 {
+		return
+	}
+	width := int(done * 20 / total)
+	fmt.Fprintf(u.out, "  %s  %s%s %d Ko", label, strings.Repeat("█", width), strings.Repeat(" ", 20-width), total/1024)
+	if done >= total {
+		fmt.Fprintln(u.out)
+	}
+}
+
+// Interactive indique si une question peut être posée (terminal en entrée et en sortie).
+func (u *UI) Interactive() bool {
+	return u.interactive
 }
 
 // Confirm pose une question oui/non ; « Non » par défaut. Sans terminal, rien n'est
