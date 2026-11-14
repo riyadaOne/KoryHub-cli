@@ -27,6 +27,7 @@ type fakeHub struct {
 	archive   []byte
 	sha       string // empreinte annoncée (vide : celle de l'archive)
 	status    string // statut de la version
+	atRisk    string // avertissement de sécurité (vide : aucun)
 	failWith  string // corps d'erreur JSON du téléchargement
 	failCode  int
 	cuts      int // coupures réseau avant de réussir
@@ -67,8 +68,9 @@ func newFakeHub(t *testing.T, files map[string]string) *fakeHub {
 			detail := map[string]any{
 				"name": "@moussa/paiement", "version": h.version, "status": h.status, "prerelease": false, "license": "MIT",
 				"language": "php", "published_at": nil, "sha256": h.announced(), "size": len(h.archive), "deprecation_message": nil,
-				"requires": []map[string]any{{"ecosystem": "composer", "name": "php", "version": ">=8.3"}},
-				"files":    h.fileList(),
+				"at_risk_message": h.atRiskMessage(),
+				"requires":        []map[string]any{{"ecosystem": "composer", "name": "php", "version": ">=8.3"}},
+				"files":           h.fileList(),
 			}
 			json.NewEncoder(w).Encode(detail)
 		case versionPath + "/download":
@@ -98,6 +100,15 @@ func newFakeHub(t *testing.T, files map[string]string) *fakeHub {
 	t.Cleanup(h.server.Close)
 
 	return h
+}
+
+// atRiskMessage : null sans avertissement, comme l'API (W07).
+func (h *fakeHub) atRiskMessage() any {
+	if h.atRisk == "" {
+		return nil
+	}
+
+	return h.atRisk
 }
 
 func (h *fakeHub) build() {
@@ -275,5 +286,21 @@ func TestPullRetriesAfterANetworkCut(t *testing.T) {
 	code, out, errOut := s.run("", "pull", "@moussa/paiement", "--yes")
 	if code != ExitOK || !strings.Contains(out, "new attempt (2/3)") || !strings.Contains(out, "new attempt (3/3)") {
 		t.Fatalf("code %d, %q, %q", code, out, errOut)
+	}
+}
+
+func TestPullShowsTheSecurityWarningBeforeInstalling(t *testing.T) {
+	hub := newFakeHub(t, koryFiles)
+	hub.atRisk = "Webhook non signé : passez en 1.2.1."
+	s := newSession(t, hub.server.URL)
+	emptyProject(t)
+
+	code, out, errOut := s.run("", "pull", "@moussa/paiement", "--yes")
+	if code != ExitOK {
+		t.Fatalf("code %d, %q, %q", code, out, errOut)
+	}
+	warning := strings.Index(out, "Security warning on version 1.2.0 from the moderation team:")
+	if warning < 0 || !strings.Contains(out, "Webhook non signé : passez en 1.2.1.") || warning > strings.Index(out, "Checksum verified") {
+		t.Errorf("avertissement absent ou après l'installation : %q", out)
 	}
 }

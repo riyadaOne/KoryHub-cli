@@ -289,6 +289,10 @@ func printWarnings(e *env, module *api.Module, detail *api.VersionDetail) {
 		}
 		e.ui.Warn(i18n.T("pull.deprecated", detail.Version), message)
 	}
+	// Avertissement de sécurité de l'équipe de modération (W07, F-INT-13) : affiché avant la confirmation.
+	if detail.AtRiskMessage != nil {
+		e.ui.Warn(i18n.T("pull.at_risk", detail.Version), *detail.AtRiskMessage)
+	}
 	if module.Status == "archived" {
 		e.ui.Warn(i18n.T("pull.archived"), "")
 	}

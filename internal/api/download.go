@@ -122,6 +122,7 @@ type VersionDetail struct {
 	SHA256             string        `json:"sha256"`
 	Size               int64         `json:"size"`
 	DeprecationMessage *string       `json:"deprecation_message"`
+	AtRiskMessage      *string       `json:"at_risk_message"`
 	Requires           []Requirement `json:"requires"`
 	Architecture       Architecture  `json:"architecture"`
 	Files              []VersionFile `json:"files"`
