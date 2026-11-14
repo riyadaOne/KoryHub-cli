@@ -13,8 +13,12 @@ import (
 // IgnoreFile : fichiers jamais envoyés (F-REG-08), à la racine du projet.
 const IgnoreFile = ".koryignore"
 
-// DefaultIgnore : liste par défaut du PRD (F-REG-08), plus le dossier des manifestes.
-var DefaultIgnore = []string{".env*", "*.pem", "*.key", "id_rsa*", ".git", "node_modules", "vendor", Dir}
+// DefaultIgnore : liste par défaut du PRD (F-REG-08), écrite dans le .koryignore de départ.
+var DefaultIgnore = []string{".env*", "*.pem", "*.key", "id_rsa*", ".git", "node_modules", "vendor"}
+
+// toolFiles : fichiers de kory lui-même, jamais repris dans un kory (dossier des manifestes,
+// liste des exclusions ; recette K02 : .koryignore était repris par kory init --add .).
+var toolFiles = []string{Dir, IgnoreFile}
 
 // Ignore applique les motifs : sans « / », le motif vise chaque élément du chemin (un dossier
 // ignore tout son contenu) ; avec « / », il vise le chemin entier depuis la racine.
@@ -24,7 +28,7 @@ type Ignore struct {
 
 // LoadIgnore lit .koryignore (lignes vides et # ignorées) en plus de la liste par défaut.
 func LoadIgnore(root string) (*Ignore, error) {
-	ig := &Ignore{patterns: append([]string{}, DefaultIgnore...)}
+	ig := &Ignore{patterns: append(append([]string{}, DefaultIgnore...), toolFiles...)}
 
 	f, err := os.Open(filepath.Join(root, IgnoreFile))
 	if errors.Is(err, fs.ErrNotExist) {

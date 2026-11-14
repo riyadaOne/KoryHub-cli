@@ -86,6 +86,7 @@ func TestIgnorePatterns(t *testing.T) {
 	cases := map[string]bool{
 		"src/.env.local": true, "keys/server.pem": true, "node_modules/x/index.js": true, "build/app.js": true,
 		"docs/brouillon.md": true, "docs/guide.md": false, "src/Service.php": false, ".kory/paiement/kory.json": true,
+		".koryignore": true,
 	}
 	for rel, want := range cases {
 		if got := ig.Match(rel); got != want {
