@@ -69,6 +69,17 @@ func (u *UI) Warn(cause, action string) {
 	u.twoLines(u.out, u.paint(yellow, "!"), cause, action)
 }
 
+// Notice écrit « ! cause » et sa ligne d'action sur la sortie d'erreur : un avis qui ne fait pas
+// partie du résultat de la commande (nouvelle version de kory, K05).
+func (u *UI) Notice(cause, action string) {
+	u.twoLines(u.err, u.paint(yellow, "!"), cause, action)
+}
+
+// Terminal indique si la sortie est un terminal (et non un fichier ou un autre programme).
+func (u *UI) Terminal() bool {
+	return u.terminal
+}
+
 // Error écrit « ✗ cause » et, si elle est donnée, la ligne d'action, sur la sortie d'erreur.
 func (u *UI) Error(cause, action string) {
 	u.twoLines(u.err, u.paint(red, "✗"), cause, action)

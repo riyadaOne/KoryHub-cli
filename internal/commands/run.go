@@ -86,7 +86,12 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 	for _, cmd := range commandList() {
 		if cmd.name == name {
-			return cmd.run(e, args[1:])
+			code := cmd.run(e, args[1:])
+			if code == ExitOK {
+				maybeNotifyUpdate(e, name)
+			}
+
+			return code
 		}
 	}
 
