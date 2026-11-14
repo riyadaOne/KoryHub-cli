@@ -21,7 +21,7 @@ func fakeSearchAPI(t *testing.T) (*httptest.Server, *string) {
 				return
 			}
 			w.Write([]byte(`{"total":2,"results":[
-				{"name":"@moussa/mobile-money-resilient","description":"Encaissement Mobile Money résistant aux coupures réseau, sans double débit.","language":"php","category":"payments","latest_version":"1.2.0","deprecated":false,"archived":false,"certified":false,"rating_avg":4.6,"rating_count":9,"download_count":1240},
+				{"name":"@moussa/mobile-money-resilient","description":"Encaissement Mobile Money résistant aux coupures réseau, sans double débit.","language":"php","category":"payments","latest_version":"1.2.0","deprecated":false,"archived":false,"certified":true,"rating_avg":4.6,"rating_count":9,"download_count":1240},
 				{"name":"@fatime-zakaria/sms-ar","description":"إرسال الرسائل النصية عند انقطاع الإنترنت","language":"dart","category":null,"latest_version":"0.9.2","deprecated":true,"archived":true,"certified":false,"rating_avg":null,"rating_count":0,"download_count":95}]}`))
 		case "/v1/modules/moussa/mobile-money-resilient":
 			w.Write([]byte(`{"name":"@moussa/mobile-money-resilient","visibility":"public","status":"active","latest_version":"1.2.0","description":"Encaissement Mobile Money.","language":"php","certified":false,"download_count":1240,
@@ -51,7 +51,7 @@ func TestSearchShowsATableWithStatusesAndFilters(t *testing.T) {
 	if code != ExitOK {
 		t.Fatalf("code %d, %q", code, errOut)
 	}
-	for _, want := range []string{"KORY", "@moussa/mobile-money-resilient", "1.2.0", "4.6 (9)", "1240", "sans double débit.", "0.9.2 deprecated archived", "إرسال الرسائل", "results: 2"} {
+	for _, want := range []string{"KORY", "@moussa/mobile-money-resilient", "1.2.0 ✓", "4.6 (9)", "1240", "sans double débit.", "0.9.2 deprecated archived", "إرسال الرسائل", "results: 2"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("sortie sans %q : %q", want, out)
 		}

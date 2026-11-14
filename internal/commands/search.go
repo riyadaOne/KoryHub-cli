@@ -77,6 +77,9 @@ func runSearch(e *env, args []string) int {
 		if r.Deprecated {
 			version += " " + i18n.T("search.deprecated")
 		}
+		if r.Certified {
+			version += " ✓"
+		}
 		if r.Archived {
 			version += " " + i18n.T("search.archived")
 		}

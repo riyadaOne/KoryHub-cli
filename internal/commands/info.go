@@ -117,7 +117,9 @@ func printInfoHeader(e *env, module *api.Module, detail *api.VersionDetail) {
 	}
 	e.ui.Println(fmt.Sprintf("  %-10s %s · ↓ %d", i18n.T("info.rating_label"), rating, module.DownloadCount))
 
-	if !module.Certified {
+	if module.Certified {
+		e.ui.Success(i18n.T("info.certified"))
+	} else {
 		e.ui.Warn(i18n.T("info.not_certified"), "")
 	}
 	if module.Status == "archived" {
